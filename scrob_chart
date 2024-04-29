@@ -45,16 +45,27 @@ while true; do
         esac
 done
 
-# Check for HELP
-if [ $HELP == true ]; then
-        echo "scrob_chart -- download customizable Last.fm album charts 
-                -u, --user [LASTFM_USERNAME]
-                -s, --size [3x3|4x4|5x5|10x10] (default=3x3)
-                -t, --time [week|month|quart|half|year|all] (default=month)
-                -o, --outfile [FILE] (default=~/downloads/listen_log_SIZE_TIME_<YYYYMM>.png)
-                -h, --help
+# Handle HELP
+if [ -z "$USER" ]; then 
+        echo "ERROR: --user not specified, printing help and exiting"
+        HELP=true
+fi
 
-                Dependencies: bash, getopt, wget, whoami, date, and an Internet connection"
+if [ $HELP == true ]; then
+        echo "
+scrob_chart -- download customizable Last.fm album charts 
+
+               -u, --user [LASTFM_USERNAME]
+
+               -s, --size [3x3|4x4|5x5|10x10] (default=3x3)
+
+               -t, --time [week|month|quart|half|year|all] (default=month)
+
+               -o, --outfile [FILE] (default=~/downloads/scrob_chart_SIZE_TIME_<YYYYMMDD>.png)
+
+               -h, --help
+
+               Dependencies: bash, getopt, wget, whoami, date, and an Internet connection"
         exit 0
 fi
 
@@ -66,7 +77,7 @@ case $TIME in
         "half" ) TIME="6month" ;;
         "year" ) TIME="12month" ;;
         "all" ) TIME="overall" ;;
-        *) TIME="1month"; echo "INFO: Using default time month" ;;
+        *) TIME="1month"; echo "INFO: Using default time month. Did you specify a valid value?" ;;
 esac
 
 # Convert SIZE to URL format
@@ -75,11 +86,12 @@ case $SIZE in
         "4x4" ) ;;
         "5x5" ) ;;
         "10x10" ) ;;
-        * ) SIZE="3x3"; echo "INFO: Using default size 3x3" ;;
+        * ) SIZE="3x3"; echo "INFO: Using default size 3x3. Did you specify a valid value?" ;;
 esac
 
 # Generate default OUTFILE name
-OUTFILE="/home/$(whoami)/downloads/listen_log_${SIZE}_${TIME}_$(date +'%Y%m').png"
+OUTFILE="/home/$(whoami)/downloads/scrob_chart_${SIZE}_${TIME}_$(date +'%Y%m%d').png"
+echo "INFO: Saving chart to $OUTFILE"
 
 # Get the chart
 URL="https://www.tapmusic.net/collage.php?user=${USER}&type=${TIME}&size=${SIZE}&caption=true"
