@@ -20,3 +20,7 @@ value to something more macOS-friendly.
 # License
 
 [GPL v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
+
+# TODO
+
+* Update default OUTFILE to work on macOS
