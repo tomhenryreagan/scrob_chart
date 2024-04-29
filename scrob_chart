@@ -1,0 +1,86 @@
+#!/usr/bin/bash
+# Author: TomHenry Reagan
+# 04-29-2024
+
+######################### LICENSE INFO #################################
+#    scrob_chart: download customizable Last.fm album charts 
+#    Copyright (C) 2024 TomHenry Reagan 
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#########################################################################
+
+TEMP=$(getopt --options hu:s:t:o: --longoptions help,user:,size:,time:,outfile: -n 'scrob_chart' -- "$@")
+
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+eval set -- "$TEMP"
+
+HELP=false
+USER=
+SIZE="default"
+TIME="default"
+OUTFILE=
+
+# Parse options from command line
+while true; do
+        case "$1" in
+                -u | --user ) USER="$2"; shift 2 ;;
+                -s | --size ) SIZE="$2"; shift 2 ;;
+                -t | --time ) TIME="$2"; shift 2 ;;
+                -o | --outfile ) OUTFILE="$2"; shift 2 ;;
+                -h | --help ) HELP=true; shift ;;
+                -- ) shift; break ;;
+                * ) break ;;
+        esac
+done
+
+# Check for HELP
+if [ $HELP == true ]; then
+        echo "scrob_chart -- download customizable Last.fm album charts 
+                -u, --user [LASTFM_USERNAME]
+                -s, --size [3x3|4x4|5x5|10x10] (default=3x3)
+                -t, --time [week|month|quart|half|year|all] (default=month)
+                -o, --outfile [FILE] (default=~/downloads/listen_log_SIZE_TIME_<YYYYMM>.png)
+                -h, --help
+
+                Dependencies: bash, getopt, wget, whoami, date, and an Internet connection"
+        exit 0
+fi
+
+# Convert TIME to URL format
+case $TIME in
+        "week" ) TIME="7day" ;;
+        "month" ) TIME="1month" ;;
+        "quart" ) TIME="3month" ;;
+        "half" ) TIME="6month" ;;
+        "year" ) TIME="12month" ;;
+        "all" ) TIME="overall" ;;
+        *) TIME="1month"; echo "INFO: Using default time month" ;;
+esac
+
+# Convert SIZE to URL format
+case $SIZE in 
+        "3x3" ) ;;
+        "4x4" ) ;;
+        "5x5" ) ;;
+        "10x10" ) ;;
+        * ) SIZE="3x3"; echo "INFO: Using default size 3x3" ;;
+esac
+
+# Generate default OUTFILE name
+OUTFILE="/home/$(whoami)/downloads/listen_log_${SIZE}_${TIME}_$(date +'%Y%m').png"
+
+# Get the chart
+URL="https://www.tapmusic.net/collage.php?user=${USER}&type=${TIME}&size=${SIZE}&caption=true"
+wget --verbose --continue --output-document=- $URL > $OUTFILE 
