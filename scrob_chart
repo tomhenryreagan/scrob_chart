@@ -20,38 +20,7 @@
 #    along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #########################################################################
 
-TEMP=$(getopt --options hu:s:t:o: --longoptions help,user:,size:,time:,outfile: -n 'scrob_chart' -- "$@")
-
-if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
-
-eval set -- "$TEMP"
-
-HELP=false
-USER=
-SIZE="default"
-TIME="default"
-OUTFILE=
-
-# Parse options from command line
-while true; do
-        case "$1" in
-                -u | --user ) USER="$2"; shift 2 ;;
-                -s | --size ) SIZE="$2"; shift 2 ;;
-                -t | --time ) TIME="$2"; shift 2 ;;
-                -o | --outfile ) OUTFILE="$2"; shift 2 ;;
-                -h | --help ) HELP=true; shift ;;
-                -- ) shift; break ;;
-                * ) break ;;
-        esac
-done
-
-# Handle HELP
-if [ -z "$USER" ]; then 
-        echo "ERROR: --user not specified, printing help and exiting"
-        HELP=true
-fi
-
-if [ $HELP == true ]; then
+function print_help () {
         echo "
 scrob_chart -- download customizable Last.fm album charts 
 
@@ -66,7 +35,44 @@ scrob_chart -- download customizable Last.fm album charts
                -h, --help
 
                Dependencies: bash, getopt, wget, whoami, date, and an Internet connection"
+}
+
+TEMP=$(getopt --options hu:s:t:o: --longoptions help,user:,size:,time:,outfile: -n 'scrob_chart' -- "$@")
+
+if [ $? != 0 ] ; then echo "Terminating..." >&2 ; exit 1 ; fi
+
+eval set -- "$TEMP"
+
+HELP=false
+USER=
+SIZE="default"
+TIME="default"
+OUTFILE_FLAG=false
+
+# Parse options from command line
+while true; do
+        case "$1" in
+                -u | --user ) USER="$2"; shift 2 ;;
+                -s | --size ) SIZE="$2"; shift 2 ;;
+                -t | --time ) TIME="$2"; shift 2 ;;
+                -o | --outfile ) OUTFILE="$2"; OUTFILE_FLAG=true; shift 2 ;;
+                -h | --help ) HELP=true; shift ;;
+                -- ) shift; break ;;
+                * ) break ;;
+        esac
+done
+
+# Handle HELP
+if [ $HELP == true ]; then
+        print_help
         exit 0
+fi
+
+# Ensure USER is specified
+if [ -z "$USER" ]; then 
+        echo "ERROR: --user not specified, printing help and exiting"
+        print_help
+        exit 1
 fi
 
 # Convert TIME to URL format
@@ -77,7 +83,7 @@ case $TIME in
         "half" ) TIME="6month" ;;
         "year" ) TIME="12month" ;;
         "all" ) TIME="overall" ;;
-        *) TIME="1month"; echo "INFO: Using default time month. Did you specify a valid value?" ;;
+        *) TIME="1month"; echo "WARNING: Using default time month. Did you specify a valid value?" ;;
 esac
 
 # Convert SIZE to URL format
@@ -86,11 +92,13 @@ case $SIZE in
         "4x4" ) ;;
         "5x5" ) ;;
         "10x10" ) ;;
-        * ) SIZE="3x3"; echo "INFO: Using default size 3x3. Did you specify a valid value?" ;;
+        * ) SIZE="3x3"; echo "WARNING: Using default size 3x3. Did you specify a valid value?" ;;
 esac
 
 # Generate default OUTFILE name
-OUTFILE="/home/$(whoami)/downloads/scrob_chart_${SIZE}_${TIME}_$(date +'%Y%m%d').png"
+if [ $OUTFILE_FLAG == false ]; then
+    OUTFILE="/home/$(whoami)/downloads/scrob_chart_${SIZE}_${TIME}_$(date +'%Y%m%d_%S').png"
+fi
 echo "INFO: Saving chart to $OUTFILE"
 
 # Get the chart
